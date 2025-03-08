@@ -12,8 +12,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Endpoint JSON-RPC pour MCP
-app.post('/', handleJsonRpc);
+// Endpoint JSON-RPC pour MCP (préféré pour Smithery)
+app.post('/', (req, res, next) => {
+  console.log("Received JSON-RPC request:", req.body);
+  handleJsonRpc(req, res, next);
+});
 
 // Routes REST traditionnelles (conservées pour la compatibilité)
 app.use('/mcp', placesRouter);
@@ -31,8 +34,24 @@ app.get('/', (req, res) => {
   });
 });
 
+// Route healthcheck (important pour Smithery et les containers)
+app.get('/healthcheck', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
+
+// Pour vérifier la connexion MCP sans JSON-RPC (utile pour déboguer)
+app.get('/mcp-status', (req, res) => {
+  res.status(200).json({
+    status: 'running',
+    version: '1.0.0',
+    protocol: 'MCP JSON-RPC',
+    message: 'MCP server is running correctly'
+  });
+});
+
 // Gestion des erreurs
 app.use((err, req, res, next) => {
+  console.error("Server Error:", err.message);
   console.error(err.stack);
   
   res.status(err.statusCode || 500).json({
@@ -48,6 +67,7 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`MCP JSON-RPC endpoint available at: http://localhost:${PORT}/`);
+  console.log(`Healthcheck endpoint: http://localhost:${PORT}/healthcheck`);
   console.log(`REST endpoints available at:`);
   console.log(`- http://localhost:${PORT}/mcp/google-places-photo`);
   console.log(`- http://localhost:${PORT}/mcp/search-places`);
