@@ -31,15 +31,18 @@ environment:
     default: "production"
     required: false
 
-# Définition des outils exposés
+# Définition des outils exposés en JSON
 tools:
   - name: searchPlaces
     description: "Recherche des lieux et récupère leurs références de photos"
     parameters:
-      - name: query
-        type: string
-        description: 'Terme de recherche (ex: "Eiffel Tower")'
-        required: true
+      type: object
+      properties:
+        query:
+          type: string
+          description: 'Terme de recherche (ex: "Eiffel Tower")'
+      required:
+        - query
     returns:
       type: object
       properties:
@@ -69,14 +72,16 @@ tools:
   - name: getPlacePhoto
     description: "Récupère l'URL d'une photo à partir d'une référence Google Places"
     parameters:
-      - name: photo_reference
-        type: string
-        description: "Référence de la photo Google Places"
-        required: true
-      - name: maxwidth
-        type: number
-        description: "Largeur maximale de l'image (par défaut 400)"
-        required: false
+      type: object
+      properties:
+        photo_reference:
+          type: string
+          description: "Référence de la photo Google Places"
+        maxwidth:
+          type: number
+          description: "Largeur maximale de l'image (par défaut 400)"
+      required:
+        - photo_reference
     returns:
       type: object
       properties:
