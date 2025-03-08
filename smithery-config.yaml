@@ -1,0 +1,85 @@
+# Configuration Smithery pour le serveur MCP Google Places
+
+version: 1
+name: google-places-photos
+description: "Récupère des photos de lieux à partir de l'API Google Places"
+author: TimHub88
+
+# Configuration du service
+service:
+  protocol: jsonrpc
+  initialization_timeout_ms: 30000
+  port: 3000
+  healthcheck:
+    path: "/healthcheck"
+    interval_seconds: 5
+    timeout_seconds: 3
+    retries: 3
+
+# Configuration de l'environnement
+environment:
+  - name: GOOGLE_PLACES_API_KEY
+    description: "Clé API Google Places"
+    default: "default_api_key"
+    required: true
+  - name: PORT
+    description: "Port sur lequel le serveur s'exécute"
+    default: "3000"
+    required: false
+  - name: NODE_ENV
+    description: "Environnement Node.js"
+    default: "production"
+    required: false
+
+# Définition des outils exposés
+tools:
+  - name: searchPlaces
+    description: "Recherche des lieux et récupère leurs références de photos"
+    parameters:
+      - name: query
+        type: string
+        description: 'Terme de recherche (ex: "Eiffel Tower")'
+        required: true
+    returns:
+      type: object
+      properties:
+        places:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              address:
+                type: string
+              place_id:
+                type: string
+              photos:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    photo_reference:
+                      type: string
+                    width:
+                      type: number
+                    height:
+                      type: number
+
+  - name: getPlacePhoto
+    description: "Récupère l'URL d'une photo à partir d'une référence Google Places"
+    parameters:
+      - name: photo_reference
+        type: string
+        description: "Référence de la photo Google Places"
+        required: true
+      - name: maxwidth
+        type: number
+        description: "Largeur maximale de l'image (par défaut 400)"
+        required: false
+    returns:
+      type: object
+      properties:
+        photoUrl:
+          type: string
+          description: "URL de la photo" 
