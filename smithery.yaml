@@ -1,0 +1,57 @@
+# Configuration Smithery pour le serveur MCP Google Places
+
+version: 1
+name: google-places-photos
+description: Récupère des photos de lieux à partir de l'API Google Places
+author: TimHub88
+tools:
+  - name: searchPlaces
+    description: Recherche des lieux et récupère leurs références de photos
+    parameters:
+      - name: query
+        type: string
+        description: Terme de recherche (ex: "Eiffel Tower")
+        required: true
+    returns:
+      type: object
+      properties:
+        places:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              address:
+                type: string
+              place_id:
+                type: string
+              photos:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    photo_reference:
+                      type: string
+                    width:
+                      type: number
+                    height:
+                      type: number
+
+  - name: getPlacePhoto
+    description: Récupère l'URL d'une photo à partir d'une référence Google Places
+    parameters:
+      - name: photo_reference
+        type: string
+        description: Référence de la photo Google Places
+        required: true
+      - name: maxwidth
+        type: number
+        description: Largeur maximale de l'image (par défaut 400)
+        required: false
+    returns:
+      type: object
+      properties:
+        photoUrl:
+          type: string
+          description: URL de la photo
