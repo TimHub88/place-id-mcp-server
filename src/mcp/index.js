@@ -1,5 +1,28 @@
 const { placesController } = require('../controllers');
 
+// Mode JSON-RPC pour Smithery
+const isStdioMode = process.argv.includes('--stdio');
+
+// Fonction utilitaire pour logger sans perturber le mode stdio
+const safeLog = (message, data) => {
+  if (!isStdioMode) {
+    if (data) {
+      console.log(message, data);
+    } else {
+      console.log(message);
+    }
+  }
+};
+
+// Fonction utilitaire pour logger les erreurs (toujours sur stderr)
+const safeErrorLog = (message, error) => {
+  if (isStdioMode) {
+    console.error(message, error?.message || error);
+  } else {
+    console.error(message, error);
+  }
+};
+
 // Métadonnées MCP
 const metadata = {
   name: 'google-places-photos',
@@ -70,7 +93,7 @@ const tools = [
 const methods = {
   // Méthode d'initialisation MCP
   initialize: async () => {
-    console.log("Initialize method called");
+    safeLog("Initialize method called");
     return {
       status: 'success',
       metadata,
@@ -79,7 +102,7 @@ const methods = {
 
   // Méthode pour lister les outils disponibles
   'tools/list': async () => {
-    console.log("Tools/list method called");
+    safeLog("Tools/list method called");
     return {
       status: 'success',
       tools,
@@ -88,20 +111,24 @@ const methods = {
 
   // Méthode pour exécuter un outil
   'tools/execute': async (params) => {
-    console.log("Tools/execute method called with params:", JSON.stringify(params));
-    const { tool, params: toolParams } = params;
-
-    if (!tool) {
-      return {
-        status: 'error',
-        error: {
-          message: 'Tool name is required',
-        },
-      };
-    }
-
-    // Exécuter l'outil demandé
     try {
+      // Sécuriser le logging des paramètres pour éviter les erreurs de parse JSON
+      if (!isStdioMode) {
+        safeLog("Tools/execute method called with tool:", params?.tool || "undefined");
+      }
+      
+      const { tool, params: toolParams } = params || {};
+
+      if (!tool) {
+        return {
+          status: 'error',
+          error: {
+            message: 'Tool name is required',
+          },
+        };
+      }
+
+      // Exécuter l'outil demandé
       let result;
       
       switch (tool) {
@@ -125,7 +152,7 @@ const methods = {
         result,
       };
     } catch (error) {
-      console.error(`Error executing tool ${tool}:`, error);
+      safeErrorLog(`Error executing tool:`, error);
       return {
         status: 'error',
         error: {
@@ -139,11 +166,9 @@ const methods = {
 // Gestionnaire JSON-RPC
 const handleJsonRpc = async (req, res) => {
   try {
-    console.log("Handling JSON-RPC request:", JSON.stringify(req.body));
-    
     // Si la requête est vide ou non valide
     if (!req.body || typeof req.body !== 'object') {
-      console.error("Invalid request body:", req.body);
+      safeErrorLog("Invalid request body:", req.body);
       return res.status(400).json({
         jsonrpc: '2.0',
         error: {
@@ -158,7 +183,7 @@ const handleJsonRpc = async (req, res) => {
 
     // Vérifier que la requête est une requête JSON-RPC 2.0 valide
     if (jsonrpc !== '2.0') {
-      console.error("Invalid JSON-RPC version:", jsonrpc);
+      safeErrorLog("Invalid JSON-RPC version:", jsonrpc);
       return res.json({
         jsonrpc: '2.0',
         error: {
@@ -171,7 +196,7 @@ const handleJsonRpc = async (req, res) => {
 
     // Vérifier que la méthode existe
     if (!method || !methods[method]) {
-      console.error("Method not found:", method);
+      safeErrorLog("Method not found:", method);
       return res.json({
         jsonrpc: '2.0',
         error: {
@@ -186,14 +211,13 @@ const handleJsonRpc = async (req, res) => {
     const result = await methods[method](params || {});
 
     // Envoyer la réponse
-    console.log("Sending JSON-RPC response:", JSON.stringify({ jsonrpc: '2.0', result, id }));
     return res.json({
       jsonrpc: '2.0',
       result,
       id,
     });
   } catch (error) {
-    console.error(`Error handling JSON-RPC request:`, error);
+    safeErrorLog(`Error handling JSON-RPC request:`, error);
     return res.json({
       jsonrpc: '2.0',
       error: {
