@@ -92,8 +92,22 @@ const tools = [
 // Gestionnaire de méthodes JSON-RPC
 const methods = {
   // Méthode d'initialisation MCP
-  initialize: async () => {
-    safeLog("Initialize method called");
+  initialize: async (config = {}) => {
+    safeLog("Initialize method called with config:", config);
+    
+    // Support pour les deux formats de clés d'API (ancienne et nouvelle convention)
+    const apiKey = config.GOOGLE_PLACES_API_KEY || config.googlePlacesApiKey;
+    
+    // Si une clé API est fournie, la configurer comme variable d'environnement
+    if (apiKey) {
+      process.env.GOOGLE_PLACES_API_KEY = apiKey;
+      // Stockez aussi sous le nouveau format pour compatibilité future
+      process.env.googlePlacesApiKey = apiKey;
+      safeLog("API Key configured");
+    } else {
+      safeLog("No API Key provided in config");
+    }
+    
     return {
       status: 'success',
       metadata,
