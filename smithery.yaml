@@ -4,17 +4,17 @@ startCommand:
   configSchema:
     type: object
     properties:
-      GOOGLE_PLACES_API_KEY:
+      googlePlacesApiKey:
         type: string
         description: "Clé API Google Places"
-      PORT:
+      port:
         type: string
         description: "Port sur lequel le serveur s'exécute (par défaut: 3000)"
-      NODE_ENV:
+      nodeEnv:
         type: string
         description: "Environnement Node.js (par défaut: production)"
     required:
-      - GOOGLE_PLACES_API_KEY
+      - googlePlacesApiKey
   commandFunction: |-
     (config) => ({
       "command": "node",
@@ -22,9 +22,9 @@ startCommand:
         "src/index.js"
       ],
       "env": {
-        "GOOGLE_PLACES_API_KEY": config.GOOGLE_PLACES_API_KEY || "default_api_key",
-        "PORT": config.PORT || "3000",
-        "NODE_ENV": config.NODE_ENV || "production"
+        "GOOGLE_PLACES_API_KEY": config.googlePlacesApiKey || "default_api_key",
+        "PORT": config.port || "3000",
+        "NODE_ENV": config.nodeEnv || "production"
       }
     })
 
