@@ -7,9 +7,26 @@ const { handleJsonRpc } = require('./mcp');
 // Mode JSON-RPC pour Smithery
 const isStdioMode = process.argv.includes('--stdio');
 
+// Support pour les deux formats de clés d'API (ancienne et nouvelle convention)
+const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.googlePlacesApiKey || "default_api_key";
+
 // Configuration du serveur
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || process.env.port || 3000;
+const NODE_ENV = process.env.NODE_ENV || process.env.nodeEnv || "development";
+
+// Configuration de l'environnement avec les nouvelles variables
+process.env.GOOGLE_PLACES_API_KEY = GOOGLE_PLACES_API_KEY;
+process.env.PORT = PORT;
+process.env.NODE_ENV = NODE_ENV;
+
+// Log des variables d'environnement pour debug (seulement pendant le développement)
+if (NODE_ENV === "development" && !isStdioMode) {
+  console.log("Environment variables:");
+  console.log("- PORT:", PORT);
+  console.log("- NODE_ENV:", NODE_ENV);
+  console.log("- API KEY:", GOOGLE_PLACES_API_KEY ? "Définie" : "Non définie");
+}
 
 // Middleware
 app.use(cors());
