@@ -1,5 +1,5 @@
 const express = require('express');
-const { getPlacePhoto } = require('../controllers/placesController');
+const { getPlacePhoto, searchPlaces } = require('../controllers/placesController');
 
 const router = express.Router();
 
@@ -9,6 +9,13 @@ const router = express.Router();
  * @access  Public
  */
 router.post('/google-places-photo', getPlacePhoto);
+
+/**
+ * @route   GET /mcp/search-places
+ * @desc    Recherche des lieux et récupère leurs références de photos
+ * @access  Public
+ */
+router.get('/search-places', searchPlaces);
 
 module.exports = {
   placesRouter: router
