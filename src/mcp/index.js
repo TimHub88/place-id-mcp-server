@@ -6,6 +6,8 @@ const metadata = {
   version: '1.0.0',
   description: 'Récupère des photos de lieux à partir de l\'API Google Places',
   author: 'TimHub88',
+  protocol: 'jsonrpc',
+  protocolVersion: '2.0'
 };
 
 // Liste des outils disponibles
@@ -23,6 +25,17 @@ const tools = [
       },
       required: ['query'],
     },
+    returns: {
+      type: 'object',
+      properties: {
+        places: {
+          type: 'array',
+          items: {
+            type: 'object'
+          }
+        }
+      }
+    }
   },
   {
     name: 'getPlacePhoto',
@@ -41,6 +54,15 @@ const tools = [
       },
       required: ['photo_reference'],
     },
+    returns: {
+      type: 'object',
+      properties: {
+        photoUrl: {
+          type: 'string',
+          description: 'URL de la photo'
+        }
+      }
+    }
   },
 ];
 
@@ -48,6 +70,7 @@ const tools = [
 const methods = {
   // Méthode d'initialisation MCP
   initialize: async () => {
+    console.log("Initialize method called");
     return {
       status: 'success',
       metadata,
@@ -56,6 +79,7 @@ const methods = {
 
   // Méthode pour lister les outils disponibles
   'tools/list': async () => {
+    console.log("Tools/list method called");
     return {
       status: 'success',
       tools,
@@ -64,6 +88,7 @@ const methods = {
 
   // Méthode pour exécuter un outil
   'tools/execute': async (params) => {
+    console.log("Tools/execute method called with params:", JSON.stringify(params));
     const { tool, params: toolParams } = params;
 
     if (!tool) {
@@ -113,44 +138,62 @@ const methods = {
 
 // Gestionnaire JSON-RPC
 const handleJsonRpc = async (req, res) => {
-  const { jsonrpc, method, params, id } = req.body;
-
-  // Vérifier que la requête est une requête JSON-RPC 2.0 valide
-  if (jsonrpc !== '2.0') {
-    return res.json({
-      jsonrpc: '2.0',
-      error: {
-        code: -32600,
-        message: 'Invalid Request',
-      },
-      id: id || null,
-    });
-  }
-
-  // Vérifier que la méthode existe
-  if (!method || !methods[method]) {
-    return res.json({
-      jsonrpc: '2.0',
-      error: {
-        code: -32601,
-        message: 'Method not found',
-      },
-      id: id || null,
-    });
-  }
-
   try {
+    console.log("Handling JSON-RPC request:", JSON.stringify(req.body));
+    
+    // Si la requête est vide ou non valide
+    if (!req.body || typeof req.body !== 'object') {
+      console.error("Invalid request body:", req.body);
+      return res.status(400).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32600,
+          message: 'Invalid Request: Empty or invalid body',
+        },
+        id: null,
+      });
+    }
+    
+    const { jsonrpc, method, params, id } = req.body;
+
+    // Vérifier que la requête est une requête JSON-RPC 2.0 valide
+    if (jsonrpc !== '2.0') {
+      console.error("Invalid JSON-RPC version:", jsonrpc);
+      return res.json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32600,
+          message: 'Invalid Request: Expected JSON-RPC 2.0',
+        },
+        id: id || null,
+      });
+    }
+
+    // Vérifier que la méthode existe
+    if (!method || !methods[method]) {
+      console.error("Method not found:", method);
+      return res.json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32601,
+          message: `Method not found: ${method}`,
+        },
+        id: id || null,
+      });
+    }
+
     // Exécuter la méthode et récupérer le résultat
-    const result = await methods[method](params);
+    const result = await methods[method](params || {});
 
     // Envoyer la réponse
+    console.log("Sending JSON-RPC response:", JSON.stringify({ jsonrpc: '2.0', result, id }));
     return res.json({
       jsonrpc: '2.0',
       result,
       id,
     });
   } catch (error) {
-    console.error(`Error executing method ${method}:`, error);
+    console.error(`Error handling JSON-RPC request:`, error);
     return res.json({
       jsonrpc: '2.0',
       error: {
@@ -158,11 +201,13 @@ const handleJsonRpc = async (req, res) => {
         message: 'Internal error',
         data: error.message,
       },
-      id: id || null,
+      id: req.body?.id || null,
     });
   }
 };
 
 module.exports = {
   handleJsonRpc,
+  metadata,
+  tools
 };
