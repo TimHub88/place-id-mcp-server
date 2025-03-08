@@ -13,6 +13,7 @@ Ce projet développe un serveur qui expose une API HTTP permettant de récupére
 - Réponse formatée selon le protocole MCP pour intégration à Cursor
 - Gestion sécurisée de la clé API Google
 - Recherche de lieux pour obtenir des références de photos valides
+- Support du protocole MCP JSON-RPC pour l'intégration avec Smithery
 
 ## Technologies utilisées
 
@@ -68,9 +69,9 @@ npm start
 
 2. Le serveur est accessible à l'adresse `http://localhost:3000` (ou le port spécifié dans votre fichier `.env`)
 
-3. Endpoints disponibles :
+### API REST (Endpoints traditionnels)
 
-### 1. Recherche de lieux et références de photos
+#### 1. Recherche de lieux et références de photos
    - Route : `/mcp/search-places`
    - Méthode : GET
    - Paramètres : `query` (terme de recherche, ex: "Eiffel Tower")
@@ -99,7 +100,7 @@ npm start
      }
      ```
 
-### 2. Récupération de photo
+#### 2. Récupération de photo
    - Route : `/mcp/google-places-photo`
    - Méthode : POST
    - Payload :
@@ -119,18 +120,58 @@ npm start
      }
      ```
 
-## Flux de travail typique
+### API JSON-RPC (Protocol MCP)
 
-1. Utilisez d'abord l'endpoint `/mcp/search-places` pour obtenir des références de photos valides
-2. Utilisez ensuite ces références avec l'endpoint `/mcp/google-places-photo` pour obtenir les URLs des photos
+Le serveur implémente également l'interface JSON-RPC requise par le protocole MCP pour l'intégration avec Smithery :
 
-## Intégration avec Cursor
+- **Endpoint JSON-RPC** : `http://localhost:3000/`
+- **Méthode** : POST
+- **Content-Type** : `application/json`
+
+#### Méthodes disponibles :
+
+1. **initialize** : Initialise la connexion MCP
+   ```json
+   {
+     "jsonrpc": "2.0",
+     "method": "initialize",
+     "params": {},
+     "id": 1
+   }
+   ```
+
+2. **tools/list** : Liste les outils disponibles
+   ```json
+   {
+     "jsonrpc": "2.0",
+     "method": "tools/list",
+     "params": {},
+     "id": 2
+   }
+   ```
+
+3. **tools/execute** : Exécute un outil spécifique
+   ```json
+   {
+     "jsonrpc": "2.0",
+     "method": "tools/execute",
+     "params": {
+       "tool": "searchPlaces",
+       "params": {
+         "query": "Eiffel Tower"
+       }
+     },
+     "id": 3
+   }
+   ```
+
+## Intégration avec Cursor via Smithery
 
 Pour intégrer ce serveur MCP à Cursor via Smithery :
 
 1. Déployez le serveur sur une plateforme de votre choix
-2. Configurez l'agent MCP dans Cursor en utilisant l'URL publique du serveur
-3. Suivez la documentation de Smithery pour finaliser l'intégration
+2. Dans Smithery, ajoutez un nouvel agent MCP en utilisant l'URL de votre serveur
+3. Le serveur est conforme au protocole MCP et inclut les fichiers `smithery.yaml` et `Dockerfile` nécessaires
 
 ## Développement
 
